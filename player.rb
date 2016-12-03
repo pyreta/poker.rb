@@ -19,8 +19,8 @@ class Player
     @fold = false
   end
 
-  def rate_hand
-    @hand.rate_hand
+  def evaluate_hand
+    @hand.evaluate_hand
   end
 
   def hand_rank

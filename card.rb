@@ -13,7 +13,7 @@ class Card
     :seven => "7",
     :eight => "8",
     :nine  => "9",
-    :ten   => "10",
+    :ten   => "T",
     :jack  => "J",
     :queen => "Q",
     :king  => "K",

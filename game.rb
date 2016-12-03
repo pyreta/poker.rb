@@ -120,7 +120,7 @@ class Game
 
   def settle_win
     @players.each do |player|
-      puts "#{player.name} #{player.hand.pocket.join(" ")} has a #{player.rate_hand.to_s.split("_").join(" ")}"
+      puts "#{player.name} #{player.hand.pocket.join(" ")} has a #{player.evaluate_hand.to_s.split("_").join(" ")} #{player.hand.starting_rating}"
     end
     all_winners = winners
     if all_winners.length == 1
@@ -242,22 +242,22 @@ class Game
       @board.add_river(d.take_card)
       # puts suit_count(hand)
       puts hand2.join(" ")
-      puts handclass2.rate_hand
+      puts handclass2.evaluate_hand
       # p groups(hand2)
-      # puts "high card: #{rate_hand(hand2)}"
+      # puts "high card: #{evaluate_hand(hand2)}"
       # puts "pair: #{pair(hand2)}"
       puts hand3.join(" ")
-      puts handclass3.rate_hand
+      puts handclass3.evaluate_hand
       # p groups(hand3)
-      # puts "high card: #{rate_hand(hand3)}"
+      # puts "high card: #{evaluate_hand(hand3)}"
       # puts "pair: #{pair(hand3)}"
       puts ""
       puts hand.join(" ")
       # p groups(hand)
-      # puts "high card: #{rate_hand(hand)}"
+      # puts "high card: #{evaluate_hand(hand)}"
       # puts "pair: #{pair(hand)}"
       puts
-      puts handclass.rate_hand
+      puts handclass.evaluate_hand
       # handclass.card_class_count.each do |k, v|
       #   puts k
       #   puts v.join(" ")
