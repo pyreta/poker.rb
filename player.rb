@@ -1,4 +1,6 @@
 
+require 'colorize'
+
 class Player
   attr_reader :hand, :name, :board, :money
   attr_accessor :fold, :settled, :money_in_the_pot
@@ -25,19 +27,34 @@ class Player
     @hand.rank
   end
 
-  def bet(bet_amount, minimum)
-    @fold = true if bet_amount == 'f'
-    bet_amount = bet_amount.to_i > @money ? @money : bet_amount.to_i
-    put_money_in_pot(bet_amount)
+  def bet(bet_amount)
+    if bet_amount == 'f'
+      @fold = true
+      puts "*** #{@name} folds. ***".colorize(:yellow)
+    end
+    unless @fold
+      bet_amount = bet_amount.to_i > @money ? @money : bet_amount.to_i
 
-    puts "YOU DIDNT BET ENOUGH #{@name}! #{minimum - @money_in_the_pot} short!" if minimum > @money_in_the_pot
-    puts "#{@name} #{"bets".colorize(:red)} #{bet_amount.to_s.colorize(:green)}"
+      put_money_in_pot(bet_amount)
+
+      if @pot.amount_to_call > @money_in_the_pot
+        # puts "YOU DIDNT BET ENOUGH #{@name}! #{@pot.amount_to_call - @money_in_the_pot} short!"
+      elsif @pot.amount_to_call <= @money_in_the_pot
+        @pot.amount_to_call = @money_in_the_pot
+        # puts "#{@pot.amount_to_call} is the new min bet!"
+      end
+      puts "#{@name} #{"bets".colorize(:red)} #{bet_amount.to_s.colorize(:green)}"
+    end
   end
 
   def put_money_in_pot(amount)
     @money_in_the_pot += amount
     @money -= amount
     @pot.add(amount)
+  end
+
+  def needs_to_bet?
+    (@pot.amount_to_call > @money_in_the_pot) && !@fold
   end
 
   def win_money(amount)

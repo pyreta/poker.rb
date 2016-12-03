@@ -1,6 +1,11 @@
+
+
 class Pot
+  attr_accessor :amount_to_call
+
   def initialize(start = 0)
     @money = start
+    @amount_to_call = 0
   end
 
   def money

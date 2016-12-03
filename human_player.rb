@@ -6,12 +6,16 @@ class HumanPlayer < Player
     super
   end
 
-  def bet(minimum)
+  def bet
     unless @fold
+      amount_to_call = @pot.amount_to_call - @money_in_the_pot
+      amount_to_call = @money if amount_to_call > @money
+      bet_string = amount_to_call > 0 ? "call $#{amount_to_call}, bet, or fold" : "check or bet"
       puts @hand.hand.join(" ")
-      print "#{@name}, make a bet: "
+      print "#{@name}, #{bet_string}: "
       bet = gets.chomp
-      super(bet, minimum)
+      bet = amount_to_call if bet == "c"
+      super(bet)
     end
   end
 

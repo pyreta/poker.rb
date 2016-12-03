@@ -6,6 +6,7 @@ require './human_player.rb'
 require './computer_player.rb'
 require './pot.rb'
 require './dealer.rb'
+require 'pry'
 
 class Game
 
@@ -17,10 +18,10 @@ class Game
     @players = []
     @all_players = []
     @pot = Pot.new
+    @pot.amount_to_call = @big_blind
     @board = Board.new
     @dealer = Dealer.new(@players, @board)
     @street = :preflop
-    @amount_to_call = @big_blind
   end
 
   def add_player(player)
@@ -51,19 +52,34 @@ class Game
     @all_players.each { |player|  player.settled = false }
   end
 
+  def anyone_needs_to_bet?
+    @players.each do |player|
+      # puts "#{player.name} needs to bet: #{player.needs_to_bet?}"
+      # binding.pry
+      return true if player.needs_to_bet?
+    end
+    false
+  end
+
   def take_bets
-    show_standings
-    unsettle_hands
-    puts @board
-    puts "____________________bets__________________________"
-    puts ""
-    puts "The pot has: #{@pot.money}"
-    while true
-      betting_order.each do |player|
-        player.bet(@amount_to_call)
+    if @players.length > 1
+      show_standings
+      unsettle_hands
+      puts @board
+      puts "____________________bets__________________________"
+      puts ""
+      puts "The pot has: #{@pot.money}"
+      betting_order.each { |player| player.bet }
+      while anyone_needs_to_bet?
+        betting_order.each do |player|
+          player.bet if player.needs_to_bet? && (@players.map { |player| !player.fold }.length > 1)
+        end
+        break unless anyone_needs_to_bet?
+        @players = @players.select { |player| !player.fold }
       end
-      break
       @players = @players.select { |player| !player.fold }
+    else
+      puts "Everyone folded.  #{@players[0].name} wins."
     end
   end
 
@@ -77,7 +93,7 @@ class Game
       space = 10 - player.name.length
       spacer=""
       space.times { spacer += "-" }
-      puts "#{player.name}: #{spacer}$#{player.money.to_i.to_s.colorize(:green)} #{is_dealer}#{is_small}#{is_big}#{folded} in the pot: #{player.money_in_the_pot}"
+      puts "#{player.name}: #{spacer}$#{player.money.to_i.to_s.colorize(:green)} #{is_dealer}#{is_small}#{is_big}#{folded}" #in the pot: #{player.money_in_the_pot}"
     end
   end
 
@@ -129,7 +145,7 @@ class Game
     @dealer.new_deck
     @players = [*@all_players]
     reset_players_money_in_pot
-    @amount_to_call = @big_blind
+    @pot.amount_to_call = @big_blind
   end
 
   def remove_losers
