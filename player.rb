@@ -25,15 +25,17 @@ class Player
     @hand.rank
   end
 
-  def bet(bet_amount)
+  def bet(bet_amount, minimum)
     @fold = true if bet_amount == 'f'
     bet_amount = bet_amount.to_i > @money ? @money : bet_amount.to_i
-    @money_in_the_pot += bet_amount
     put_money_in_pot(bet_amount)
+
+    puts "YOU DIDNT BET ENOUGH #{@name}! #{minimum - @money_in_the_pot} short!" if minimum > @money_in_the_pot
     puts "#{@name} #{"bets".colorize(:red)} #{bet_amount.to_s.colorize(:green)}"
   end
 
   def put_money_in_pot(amount)
+    @money_in_the_pot += amount
     @money -= amount
     @pot.add(amount)
   end

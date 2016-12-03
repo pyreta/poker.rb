@@ -60,7 +60,7 @@ class Game
     puts "The pot has: #{@pot.money}"
     while true
       betting_order.each do |player|
-        player.bet
+        player.bet(@amount_to_call)
       end
       break
       @players = @players.select { |player| !player.fold }
@@ -77,7 +77,7 @@ class Game
       space = 10 - player.name.length
       spacer=""
       space.times { spacer += "-" }
-      puts "#{player.name}: #{spacer}$#{player.money.to_i.to_s.colorize(:green)} #{is_dealer}#{is_small}#{is_big}#{folded}"
+      puts "#{player.name}: #{spacer}$#{player.money.to_i.to_s.colorize(:green)} #{is_dealer}#{is_small}#{is_big}#{folded} in the pot: #{player.money_in_the_pot}"
     end
   end
 

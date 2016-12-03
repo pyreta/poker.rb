@@ -6,12 +6,12 @@ class HumanPlayer < Player
     super
   end
 
-  def bet
+  def bet(minimum)
     unless @fold
       puts @hand.hand.join(" ")
       print "#{@name}, make a bet: "
       bet = gets.chomp
-      super(bet)
+      super(bet, minimum)
     end
   end
 
