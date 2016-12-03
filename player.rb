@@ -23,6 +23,10 @@ class Player
     @hand.evaluate_hand
   end
 
+  def starting_hand_rank
+    @hand.starting_rank
+  end
+
   def hand_rank
     @hand.rank
   end

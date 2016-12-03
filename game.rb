@@ -69,10 +69,10 @@ class Game
       puts "____________________bets__________________________"
       puts ""
       puts "The pot has: #{@pot.money}"
-      betting_order.each { |player| player.bet }
+      betting_order.each { |player| player.bet(@street) }
       while anyone_needs_to_bet?
         betting_order.each do |player|
-          player.bet if player.needs_to_bet? && (@players.map { |player| !player.fold }.length > 1)
+          player.bet(@street) if player.needs_to_bet? && (@players.map { |player| !player.fold }.length > 1)
         end
         break unless anyone_needs_to_bet?
         @players = @players.select { |player| !player.fold }
@@ -120,7 +120,7 @@ class Game
 
   def settle_win
     @players.each do |player|
-      puts "#{player.name} #{player.hand.pocket.join(" ")} has a #{player.evaluate_hand.to_s.split("_").join(" ")} #{player.hand.starting_rating}"
+      puts "#{player.name} #{player.hand.pocket.join(" ")} has a #{player.evaluate_hand.to_s.split("_").join(" ")}"
     end
     all_winners = winners
     if all_winners.length == 1

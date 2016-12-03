@@ -26,14 +26,14 @@ class Hand
   end
 
 
-  # def cards
-  #   (@hand + @board.all).sort_by { |card| card.rank }.reverse()
-  # end
-
-
   def cards
-    @hand.sort_by { |card| card.rank }.reverse()
+    (@hand + @board.all).sort_by { |card| card.rank }.reverse()
   end
+
+
+  # def cards
+  #   @hand.sort_by { |card| card.rank }.reverse()
+  # end
 
   def suited?
     @hand[0].suit == @hand[1].suit
@@ -87,14 +87,14 @@ class Hand
     return values_string + "o"
   end
 
-  def starting_rating
+  def starting_rank
     Hand.starting_ranks.each do |rank, hand_notations|
       return rank if hand_notations.include?(notation)
     end
     9
   end
 
-  # def starting_rating
+  # def starting_rank
   #   if pocket_pair?
   #     return 1 if top_card_at_least_a(:jack)
   #     return 2 if top_card_at_least_a(:ten)
@@ -309,30 +309,30 @@ class Hand
   end
 end
 
-ac = Card.new(:ace, :clubs)
-ad = Card.new(:ace, :diamonds)
-as = Card.new(:ace, :spades)
-qd = Card.new(:queen, :diamonds)
-qh = Card.new(:queen, :hearts)
-kc = Card.new(:king, :clubs)
-qc = Card.new(:queen, :clubs)
-jc = Card.new(:jack, :clubs)
-tc = Card.new(:ten, :clubs)
-td = Card.new(:ten, :diamonds)
-two = Card.new(:two, :hearts)
-fourd = Card.new(:four, :diamonds)
-fourc = Card.new(:four, :clubs)
-fours = Card.new(:four, :spades)
-fiveh = Card.new(:five, :hearts)
-fourh = Card.new(:four, :hearts)
-nh = Card.new(:nine, :hearts)
-nc = Card.new(:nine, :clubs)
-thh = Card.new(:three, :hearts)
-sixs = Card.new(:six, :spades)
-
-cards1 = [ac, ad]
-h = Hand.new(cards1, [])
-puts h.starting_rating
+# ac = Card.new(:ace, :clubs)
+# ad = Card.new(:ace, :diamonds)
+# as = Card.new(:ace, :spades)
+# qd = Card.new(:queen, :diamonds)
+# qh = Card.new(:queen, :hearts)
+# kc = Card.new(:king, :clubs)
+# qc = Card.new(:queen, :clubs)
+# jc = Card.new(:jack, :clubs)
+# tc = Card.new(:ten, :clubs)
+# td = Card.new(:ten, :diamonds)
+# two = Card.new(:two, :hearts)
+# fourd = Card.new(:four, :diamonds)
+# fourc = Card.new(:four, :clubs)
+# fours = Card.new(:four, :spades)
+# fiveh = Card.new(:five, :hearts)
+# fourh = Card.new(:four, :hearts)
+# nh = Card.new(:nine, :hearts)
+# nc = Card.new(:nine, :clubs)
+# thh = Card.new(:three, :hearts)
+# sixs = Card.new(:six, :spades)
+#
+# cards1 = [ac, ad]
+# h = Hand.new(cards1, [])
+# puts h.starting_rank
 #
 # cards2 = [kc, qc, jc, fourh, tc, thh, ad]
 # h2 = Hand.new(cards2, [])

@@ -6,7 +6,7 @@ class HumanPlayer < Player
     super
   end
 
-  def bet
+  def bet(street)
     unless @fold
       amount_to_call = @pot.amount_to_call - @money_in_the_pot
       amount_to_call = @money if amount_to_call > @money
