@@ -20,6 +20,7 @@ class ComputerPlayer < Player
   end
 
   def bet(street)
+    sleep 0.125
     # amount_to_call = @pot.amount_to_call - @money_in_the_pot
     # amount_to_call = @money if amount_to_call > @money
     four_bet = @pot.money / 4
@@ -29,7 +30,7 @@ class ComputerPlayer < Player
     # bet = @pot.money / 4
     bet = bets[rand(bets.length)]
     bet = "f" if folding?
-    bet = "f" if (rand(9) == 2) && (street != :preflop)
+    bet = "f" if (rand(9) == 2) && (street != :preflop) && (amount_to_call > 0)
     bet = amount_to_call if bet == "c"
     super(bet)
   end

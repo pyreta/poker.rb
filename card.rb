@@ -74,4 +74,12 @@ class Card
   def <=>(other_card)
     self.rank <=> other_card.rank
   end
+
+  def >(other_card)
+    (self <=> other_card) > 0
+  end
+
+  def ==(other_card)
+    (self <=> other_card) == 0
+  end
 end

@@ -281,9 +281,9 @@ end
 g = Game.new
 # g.play
 p1 = HumanPlayer.new('Louis')
-p2 = ComputerPlayer.new('Jacob')
-p3 = ComputerPlayer.new('Tom')
-p4 = ComputerPlayer.new('Ronnie')
+p2 = ComputerPlayer.new('Amber')
+p3 = ComputerPlayer.new('Krishan')
+p4 = ComputerPlayer.new('Erica')
 g.add_players([p1,p2,p3,p4])
 # g.add_player(p1)
 # g.add_player(p2)

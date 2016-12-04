@@ -5,7 +5,7 @@ class Player
   attr_reader :hand, :name, :board, :money
   attr_accessor :fold, :settled, :money_in_the_pot
 
-  def initialize(money = 6000, name)
+  def initialize(money = 300, name)
     @money = money
     @name = name
     @board = []

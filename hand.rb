@@ -1,4 +1,7 @@
 require './card'
+require './deck'
+require 'pry'
+require './board.rb'
 
 class Hand
   STARTING_RANKS = {
@@ -27,9 +30,9 @@ class Hand
 
 
   def cards
+    # binding.pry
     (@hand + @board.all).sort_by { |card| card.rank }.reverse()
   end
-
 
   # def cards
   #   @hand.sort_by { |card| card.rank }.reverse()
@@ -43,15 +46,6 @@ class Hand
     @hand[0].value == @hand[1].value
   end
 
-  # def connectors?
-  #   spaced_by?(1)
-  # end
-  #
-  # def spaced_by?(amount)
-  #   vals = Card.card_values.keys
-  #   vals.index(@hand[0].value) == (vals.index(@hand[1].value) + amount)
-  # end
-
   def card_class_count
     values = {}
     cards.each do |card|
@@ -63,19 +57,6 @@ class Hand
     end
     values
   end
-
-  # def top_card_rank
-  #   Card.card_values.keys.index(@hand[0].value)
-  # end
-  #
-  # def kicker_rank
-  #   Card.card_values.keys.index(@hand[1].value)
-  # end
-  #
-  # def top_card_at_least_a(value)
-  #   card_vals = Card.card_values.keys
-  #   top_card_rank >= card_vals.index(value)
-  # end
 
   def notation
     values_string = @hand.map { |card| Card.card_values[card.value] }.join
@@ -94,45 +75,6 @@ class Hand
     9
   end
 
-  # def starting_rank
-  #   if pocket_pair?
-  #     return 1 if top_card_at_least_a(:jack)
-  #     return 2 if top_card_at_least_a(:ten)
-  #     return 3 if top_card_at_least_a(:nine)
-  #     return 4 if top_card_at_least_a(:eight)
-  #     return 5 if top_card_at_least_a(:seven)
-  #     return 6 if top_card_at_least_a(:five)
-  #     return 7
-  #   elsif connectors?
-  #     if suited?
-  #       return 1 if top_card_at_least_a(:ace)
-  #       return 2 if top_card_at_least_a(:king)
-  #       return 3 if top_card_at_least_a(:jack)
-  #       return 4 if top_card_at_least_a(:nine)
-  #       return 5 if top_card_at_least_a(:seven)
-  #       return 6 if top_card_at_least_a(:five)
-  #       return 7 if top_card_at_least_a(:four)
-  #       return 8 if top_card_at_least_a(:three)
-  #     else
-  #       return 2 if top_card_at_least_a(:ace)
-  #       return 4 if top_card_at_least_a(:king)
-  #       return 5 if top_card_at_least_a(:jack)
-  #       return 7 if top_card_at_least_a(:nine)
-  #       return 8 if top_card_at_least_a(:five)
-  #     end
-  #   elsif spaced_by?(2)
-  #     if suited?
-  #       return 2 if top_card_at_least_a(:ace)
-  #       return 3 if top_card_at_least_a(:king)
-  #       return 4 if top_card_at_least_a(:jack)
-  #       return 5 if top_card_at_least_a(:nine)
-  #       return 6 if top_card_at_least_a(:seven)
-  #     else
-  #     end
-  #   end
-  #   9
-  # end
-
   def card_count
     values = Hash.new(0)
     cards.each do |card|
@@ -142,6 +84,7 @@ class Hand
   end
 
   def rank
+    evaluate_hand unless @hand_object
     [:nothing,:high_card,:pair,:two_pair,:set,:straight,:flush,:full_house,:four_of_a_kind,
       :straight_flush,:royal_flush].index(@hand_object[:type])
   end
@@ -205,8 +148,10 @@ class Hand
 
   def four_of_a_kind
     if groups[4]
-      @best_five = groups[4] + groups[1][0]
-      @hand_object = { quad: groups[4], kicker: groups[1][0][0], type: :four_of_a_kind}
+      other_cards = cards.select { |card| card.value != groups[4][0][0].value }.sort_by { |kard| kard.rank }.reverse
+      kicker = other_cards[0]
+      @best_five = groups[4] + [kicker]
+      @hand_object = { quad: groups[4], kicker: kicker, type: :four_of_a_kind}
       return @hand_object
     end
     false
@@ -235,12 +180,22 @@ class Hand
     flush
   end
 
+  def flush_draw?
+    suit_groups.values.each do |value|
+      if value.length == 4
+        return value[0].suit
+      end
+    end
+    false
+  end
+
   def pocket
     @hand
   end
 
   def straight
-    card_values = cards.sort_by {|card| card.rank }.map { |card| card.value }.reverse
+    # card_values = cards.sort_by {|card| card.rank }.map { |card| card.value }.reverse
+    card_values = cards.map { |card| card.value }.reverse
     cards.each do |card|
       card_classes = []
       straight = card.straight_values
@@ -258,6 +213,34 @@ class Hand
     false
   end
 
+  def straight_draw?
+    draws = []
+    card_values = cards.map { |card| card.value }.reverse
+    cards.each do |card|
+      missing = []
+      straight = card.straight_values
+      straight.each_with_index do |straight_value, idx|
+        unless card_values.include?(straight_value)
+          missing.push(idx)
+        end
+        # break unless card_values.include?(straight_value)
+        # straight_card = cards.select { |card| card.value == straight_value }[0]
+        # card_classes.push(straight_card)
+        # if idx == (straight.length - 1)
+        #   return true
+        # end
+      end
+      draws.push(missing)
+    end
+    false
+    straightest = draws.sort_by { |draws| draws.length }[0]
+    if straightest.length == 1
+      return :open_ended if [1,4].include?(straightest[0])
+      return :gut_shot
+    end
+    false
+  end
+
   def set
     if groups[3]
       @hand_object = { set: groups[3][0], other_cards: groups[1].map {|cards| cards[0]}[0...2], type: :set }
@@ -270,8 +253,12 @@ class Hand
   def two_pair
     if (groups[2] && groups[2].length > 1)
       pairs = (groups[2][0] + groups[2][1])
-      kicker = (groups[2][2] ? (groups[2][2] + groups[1].map do |cards|
-        cards[0] end).sort_by { |card| card.rank }.reverse() : groups[1])[0]
+      if groups[1]
+        kicker = (groups[2][2] ? (groups[2][2] + (groups[1].map do |cards|
+          cards[0] end)).sort_by { |card| card.rank }.reverse() : groups[1])[0]
+      else
+        kicker = nil
+      end
       @hand_object = { pairs: pairs, kicker: kicker, type: :two_pair }
       @best_five = @hand_object[:pairs].flatten + [@hand_object[:kicker]].flatten
       return @hand_object
@@ -302,43 +289,139 @@ class Hand
     0
   end
 
+  def possibilities
+    turn_deck = Deck.new.cards.sort_by { |card| card.rank }
+    turn_deck.each do |turn_card|
+      unless cards.map { |hand_card| hand_card.to_s }.include?(turn_card.to_s)
+        turn_hand = Hand.new(cards+[turn_card], [])
+        turn_hand.evaluate_hand
+        evaluate_hand
+        if (turn_hand.rank > self.rank)
+          puts "#{"If the turn is a".colorize(:blue)} #{turn_card}:"
+          puts "Your hand will go from a:"
+          puts evaluate_hand
+          puts "to a:"
+          puts turn_hand.evaluate_hand
+          puts ""
+          # river_deck = Deck.new.cards.sort_by { |card| card.rank }
+          # river_deck.each do |river_card|
+          #   unless cards.map { |hand_card| hand_card.to_s }.include?(river_card.to_s) || (turn_card.to_s == river_card.to_s)
+          #     river_hand = Hand.new(cards+[turn_card]+[river_card], [])
+          #     river_hand.evaluate_hand
+          #     if (river_hand.rank > turn_hand.rank)
+          #       puts "---------#{"If the river is a".colorize(:red)} #{river_card}:"
+          #       puts "---------Your hand will go from a:"
+          #       puts turn_hand.evaluate_hand
+          #       puts "---------to a:"
+          #       puts river_hand.evaluate_hand
+          #       puts ""
+          #     end
+          #   end
+          # end
+        end
+      end
+    end
+  end
+
+  def winning_percentage
+    player_range = 6
+    hands = { does_better_than: [], does_the_same_as: [], does_worse_than: [] }
+    total = 0
+    d = Deck.new.cards.sort_by { |card| card.rank }
+    card_strings = cards.map { |card| card.to_s }
+    evaluate_hand
+    d[0...-1].each_with_index do |card1, idx|
+      next if card_strings.include?(card1.to_s)
+      d[idx+1..-1].each do |card2|
+        next if card_strings.include?(card2.to_s)
+        hand = Hand.new([card1,card2], @board)
+        # if (card1.value == :four) && (card2.value == :three) || (card1.value == :three) && (card2.value == :four)
+        #   puts 'Here are the four hands'
+        #   puts card1.to_s + " " + card2.to_s
+        #   hand.evaluate_hand
+        #   puts hand.best_five.join(" ")
+        #   puts hand.rank
+        # end
+        # puts hand.cards.join(" ")
+        if hand.starting_rank <= player_range
+          hands[:does_better_than].push(hand) if self > hand
+          hands[:does_the_same_as].push(hand) if self == hand
+          hands[:does_worse_than].push(hand) if self < hand
+          total += 1
+        end
+        # puts hand.pocket.join(" ") + does_better_than
+      end
+    end
+    puts "#{(hands[:does_better_than].length / total.to_f * 100).to_i}% better than other hands"
+    puts "#{(hands[:does_the_same_as].length / total.to_f * 100).to_i}% same as than other hands"
+    puts "#{(hands[:does_worse_than].length / total.to_f * 100).to_i}% does worse than other hands"
+    puts hands[:does_worse_than].map { |hand| hand.pocket.join(" ") }
+    puts "#{hands[:does_worse_than].length} hands out of #{total} are worse against a player with a #{player_range} range"
+  end
+
   def <=>(other_hand)
+    # other_hand.evaluate_hand
     return -1 if other_hand.rank > rank
     return 1 if other_hand.rank < rank
     break_tie(other_hand)
   end
+
+  def <(other_hand)
+    (self <=> other_hand) < 0
+  end
+
+  def >(other_hand)
+    (self <=> other_hand) > 0
+  end
+
+  def ==(other_hand)
+    (self <=> other_hand) == 0
+  end
+
 end
 
-# ac = Card.new(:ace, :clubs)
-# ad = Card.new(:ace, :diamonds)
-# as = Card.new(:ace, :spades)
-# qd = Card.new(:queen, :diamonds)
-# qh = Card.new(:queen, :hearts)
-# kc = Card.new(:king, :clubs)
-# qc = Card.new(:queen, :clubs)
-# jc = Card.new(:jack, :clubs)
-# tc = Card.new(:ten, :clubs)
-# td = Card.new(:ten, :diamonds)
-# two = Card.new(:two, :hearts)
-# fourd = Card.new(:four, :diamonds)
-# fourc = Card.new(:four, :clubs)
-# fours = Card.new(:four, :spades)
-# fiveh = Card.new(:five, :hearts)
-# fourh = Card.new(:four, :hearts)
-# nh = Card.new(:nine, :hearts)
-# nc = Card.new(:nine, :clubs)
-# thh = Card.new(:three, :hearts)
-# sixs = Card.new(:six, :spades)
-#
+ac = Card.new(:ace, :clubs)
+ad = Card.new(:ace, :diamonds)
+as = Card.new(:ace, :spades)
+ah = Card.new(:ace, :hearts)
+qd = Card.new(:queen, :diamonds)
+qh = Card.new(:queen, :hearts)
+kc = Card.new(:king, :clubs)
+qc = Card.new(:queen, :clubs)
+jc = Card.new(:jack, :clubs)
+tc = Card.new(:ten, :clubs)
+td = Card.new(:ten, :diamonds)
+two = Card.new(:two, :hearts)
+fourd = Card.new(:four, :diamonds)
+fourc = Card.new(:four, :clubs)
+fours = Card.new(:four, :spades)
+fiveh = Card.new(:five, :hearts)
+fourh = Card.new(:four, :hearts)
+nh = Card.new(:nine, :hearts)
+nc = Card.new(:nine, :clubs)
+thh = Card.new(:three, :hearts)
+sixs = Card.new(:six, :spades)
+
 # cards1 = [ac, ad]
 # h = Hand.new(cards1, [])
 # puts h.starting_rank
 #
-# cards2 = [kc, qc, jc, fourh, tc, thh, ad]
-# h2 = Hand.new(cards2, [])
-#
+b = Board.new
+b.add_flop(ac,thh,fourc)
+# b.add_turn(fourc)
+# b.add_river(fourh)
+
+# random_5 = Deck.new.cards[0..4]
+cards2 = [ah, qc]
+
+h2 = Hand.new(cards2, b)
+# h2 = Hand.new(random_5, [])
+# p h2.straight_draw?
+# h2.possibilities
+
 # puts h.evaluate_hand
 # puts h.rank
 # puts h2.evaluate_hand
+h2.winning_percentage
 # puts h2.rank
 # puts h <=> h2
