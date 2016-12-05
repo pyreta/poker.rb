@@ -40,6 +40,7 @@ class Game
   def betting_order
     if @street == :preflop
       bbidx = @players.index(big_blind)
+      puts "players class is a#{@players.class} (see game line 43)"
       order = @players[bbidx+1..-1] + @players[0..bbidx]
       return order
     end

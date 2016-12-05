@@ -257,7 +257,7 @@ class Hand
         kicker = (groups[2][2] ? (groups[2][2] + (groups[1].map do |cards|
           cards[0] end)).sort_by { |card| card.rank }.reverse() : groups[1])[0]
       else
-        kicker = nil
+        kicker = groups[2][2][0]
       end
       @hand_object = { pairs: pairs, kicker: kicker, type: :two_pair }
       @best_five = @hand_object[:pairs].flatten + [@hand_object[:kicker]].flatten
@@ -323,9 +323,13 @@ class Hand
     end
   end
 
+  def max_bet(pot_size, win_percent)
+    (pot_size * win_percent * 100).to_i / 100
+  end
+
   def winning_percentage
     player_range = 6
-    hands = { does_better_than: [], does_the_same_as: [], does_worse_than: [] }
+    hands = { does_better_than: [], does_the_same_as: [], does_worse_than: [], flush_draw: [], straight_draw: [] }
     total = 0
     d = Deck.new.cards.sort_by { |card| card.rank }
     card_strings = cards.map { |card| card.to_s }
@@ -335,28 +339,28 @@ class Hand
       d[idx+1..-1].each do |card2|
         next if card_strings.include?(card2.to_s)
         hand = Hand.new([card1,card2], @board)
-        # if (card1.value == :four) && (card2.value == :three) || (card1.value == :three) && (card2.value == :four)
-        #   puts 'Here are the four hands'
-        #   puts card1.to_s + " " + card2.to_s
-        #   hand.evaluate_hand
-        #   puts hand.best_five.join(" ")
-        #   puts hand.rank
-        # end
-        # puts hand.cards.join(" ")
         if hand.starting_rank <= player_range
           hands[:does_better_than].push(hand) if self > hand
           hands[:does_the_same_as].push(hand) if self == hand
           hands[:does_worse_than].push(hand) if self < hand
+          hands[:flush_draw].push(hand) if hand.flush_draw?
+          hands[:straight_draw].push(hand) if hand.straight_draw?
           total += 1
         end
-        # puts hand.pocket.join(" ") + does_better_than
       end
     end
-    puts "#{(hands[:does_better_than].length / total.to_f * 100).to_i}% better than other hands"
-    puts "#{(hands[:does_the_same_as].length / total.to_f * 100).to_i}% same as than other hands"
-    puts "#{(hands[:does_worse_than].length / total.to_f * 100).to_i}% does worse than other hands"
-    puts hands[:does_worse_than].map { |hand| hand.pocket.join(" ") }
-    puts "#{hands[:does_worse_than].length} hands out of #{total} are worse against a player with a #{player_range} range"
+    puts @board
+    puts "#{"Your hand".colorize(:red)}: #{pocket.join(" ")}"
+    puts "#{(hands[:does_better_than].length / total.to_f * 100).to_i}% your hand does better than other hands"
+    puts "#{(hands[:does_the_same_as].length / total.to_f * 100).to_i}% your hand does the same as than other hands"
+    puts "#{(hands[:does_worse_than].length / total.to_f * 100).to_i}% your hand does does worse than other hands"
+    puts "#{(hands[:flush_draw].length / total.to_f * 100).to_i}% of other hands are on a flush draw"
+    puts "#{(hands[:straight_draw].length / total.to_f * 100).to_i}% of other hands are on a straight draw"
+    # puts hands[:does_worse_than].map { |hand| hand.pocket.join(" ") }
+    puts "you lose against #{hands[:does_worse_than].length} hands out of #{total} against a player with a #{player_range} range"
+    pot_size = 114
+    percent_win = hands[:does_better_than].length / total.to_f
+    puts "if the pot is #{pot_size}, you should call a max of #{max_bet(pot_size, percent_win)}"
   end
 
   def <=>(other_hand)
@@ -380,48 +384,50 @@ class Hand
 
 end
 
-ac = Card.new(:ace, :clubs)
-ad = Card.new(:ace, :diamonds)
-as = Card.new(:ace, :spades)
-ah = Card.new(:ace, :hearts)
-qd = Card.new(:queen, :diamonds)
-qh = Card.new(:queen, :hearts)
-kc = Card.new(:king, :clubs)
-qc = Card.new(:queen, :clubs)
-jc = Card.new(:jack, :clubs)
-tc = Card.new(:ten, :clubs)
-td = Card.new(:ten, :diamonds)
-two = Card.new(:two, :hearts)
-fourd = Card.new(:four, :diamonds)
-fourc = Card.new(:four, :clubs)
-fours = Card.new(:four, :spades)
-fiveh = Card.new(:five, :hearts)
-fourh = Card.new(:four, :hearts)
-nh = Card.new(:nine, :hearts)
-nc = Card.new(:nine, :clubs)
-thh = Card.new(:three, :hearts)
-sixs = Card.new(:six, :spades)
+# ac = Card.new(:ace, :clubs)
+# ad = Card.new(:ace, :diamonds)
+# as = Card.new(:ace, :spades)
+# ah = Card.new(:ace, :hearts)
+# qd = Card.new(:queen, :diamonds)
+# qh = Card.new(:queen, :hearts)
+# kc = Card.new(:king, :clubs)
+# qc = Card.new(:queen, :clubs)
+# jc = Card.new(:jack, :clubs)
+# tc = Card.new(:ten, :clubs)
+# td = Card.new(:ten, :diamonds)
+# two = Card.new(:two, :hearts)
+# fourd = Card.new(:four, :diamonds)
+# fourc = Card.new(:four, :clubs)
+# fours = Card.new(:four, :spades)
+# fiveh = Card.new(:five, :hearts)
+# fourh = Card.new(:four, :hearts)
+# nh = Card.new(:nine, :hearts)
+# nc = Card.new(:nine, :clubs)
+# nd = Card.new(:nine, :diamonds)
+# thh = Card.new(:three, :hearts)
+# sixs = Card.new(:six, :spades)
 
 # cards1 = [ac, ad]
 # h = Hand.new(cards1, [])
 # puts h.starting_rank
 #
-b = Board.new
-b.add_flop(ac,thh,fourc)
-# b.add_turn(fourc)
-# b.add_river(fourh)
+# b = Board.new
+# b.add_flop(ac,thh,fourd)
+# b.add_turn(as)
+# b.add_turn(ad)
+# b.add_river(nd)
 
-# random_5 = Deck.new.cards[0..4]
-cards2 = [ah, qc]
+# random_2 = Deck.new.cards[0..1]
+# cards2 = [ad, ah]
 
-h2 = Hand.new(cards2, b)
-# h2 = Hand.new(random_5, [])
+# h2 = Hand.new(cards2, b)
+# h2 = Hand.new(random_2, b)
+# h2.winning_percentage
 # p h2.straight_draw?
 # h2.possibilities
 
 # puts h.evaluate_hand
 # puts h.rank
 # puts h2.evaluate_hand
-h2.winning_percentage
 # puts h2.rank
 # puts h <=> h2
