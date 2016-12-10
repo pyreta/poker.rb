@@ -41,11 +41,11 @@ class Player
 
       put_money_in_pot(bet_amount)
 
-      if @pot.amount_to_call > @money_in_the_pot
-        # puts "YOU DIDNT BET ENOUGH #{@name}! #{@pot.amount_to_call - @money_in_the_pot} short!"
-      elsif @pot.amount_to_call <= @money_in_the_pot
-        @pot.amount_to_call = @money_in_the_pot
-        # puts "#{@pot.amount_to_call} is the new min bet!"
+      if @pot.total_amount_to_call > @money_in_the_pot
+        # puts "YOU DIDNT BET ENOUGH #{@name}! #{@pot.total_amount_to_call - @money_in_the_pot} short!"
+      elsif @pot.total_amount_to_call <= @money_in_the_pot
+        @pot.total_amount_to_call = @money_in_the_pot
+        # puts "#{@pot.total_amount_to_call} is the new min bet!"
       end
       puts "#{@name} #{"bets".colorize(:red)} #{bet_amount.to_s.colorize(:green)}"
     end
@@ -58,7 +58,7 @@ class Player
   end
 
   def needs_to_bet?
-    (@pot.amount_to_call > @money_in_the_pot) && !@fold
+    (@pot.total_amount_to_call > @money_in_the_pot) && !@fold
   end
 
   def win_money(amount)

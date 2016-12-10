@@ -1,5 +1,5 @@
-require './card.rb'
-require './suit.rb'
+require_relative './card.rb'
+require_relative './suit.rb'
 
 class Deck
   def initialize

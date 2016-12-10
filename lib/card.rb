@@ -1,5 +1,6 @@
 require 'colorize'
-require './suit.rb'
+require_relative './suit.rb'
+# require './suit.rb'
 
 
 class Card
@@ -76,6 +77,10 @@ class Card
   end
 
   def >(other_card)
+    (self <=> other_card) > 0
+  end
+
+  def <(other_card)
     (self <=> other_card) > 0
   end
 

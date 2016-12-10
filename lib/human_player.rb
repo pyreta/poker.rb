@@ -8,7 +8,7 @@ class HumanPlayer < Player
 
   def bet(street)
     unless @fold
-      amount_to_call = @pot.amount_to_call - @money_in_the_pot
+      amount_to_call = @pot.total_amount_to_call - @money_in_the_pot
       amount_to_call = @money if amount_to_call > @money
       bet_string = amount_to_call > 0 ? "call $#{amount_to_call}, bet, or fold" : "check or bet"
       puts @hand.hand.join(" ")

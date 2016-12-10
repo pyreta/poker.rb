@@ -1,7 +1,7 @@
-require './card'
-require './deck'
+require_relative './card'
+require_relative './deck'
+require_relative './board.rb'
 require 'pry'
-require './board.rb'
 
 class Hand
   STARTING_RANKS = {
@@ -19,10 +19,10 @@ class Hand
     STARTING_RANKS
   end
 
-  attr_reader :hand, :rank, :best_five, :hand_object
+  attr_reader :hand, :rank, :hand_object
 
-  def initialize(hand, board)
-    @hand = hand.sort_by { |card| card.rank }.reverse()
+  def initialize(starting_two_cards, board)
+    @hand = starting_two_cards.sort_by { |card| card.rank }.reverse()
     @board = board
     @best_five = nil
     @hand_object = nil
@@ -30,13 +30,40 @@ class Hand
 
 
   def cards
-    # binding.pry
     (@hand + @board.all).sort_by { |card| card.rank }.reverse()
+  end
+
+  def best_five
+    evaluate_hand if cards.length >= 5
+    # evaluate_hand if cards.length >= 5 && !@hand_object
+    @best_five
   end
 
   # def cards
   #   @hand.sort_by { |card| card.rank }.reverse()
   # end
+  def type
+    if @hand_object
+      return @hand_object[:type]
+    elsif cards.length >= 5
+      evaluate_hand
+      return @hand_object[:type]
+    end
+    nil
+  end
+
+  def kicker
+    if @hand_object && @hand_object[:kicker]
+      return @hand_object[:kicker][0]
+    elsif @hand_object && @hand_object[:other_cards]
+      return @hand_object[:other_cards][0]
+    elsif cards.length >= 5
+      evaluate_hand
+      return @hand_object[:kicker][0] if @hand_object[:kicker]
+      return @hand_object[:other_cards][0] if @hand_object[:other_cards]
+    end
+    nil
+  end
 
   def suited?
     @hand[0].suit == @hand[1].suit
@@ -95,7 +122,6 @@ class Hand
     end
     return "#{@hand_object[:type]}: #{@best_five.join(" ")}"
   end
-
   def groups
     groups = {}
     cards.each do |card|
@@ -105,7 +131,6 @@ class Hand
         groups[card.value] = [card]
       end
     end
-    groups
     full_groups = {}
     groups.each do |k,v|
       if full_groups[v.length]
@@ -130,17 +155,23 @@ class Hand
   end
 
   def royal_flush
-    if straight_flush && straight[:cards][0].value == :ace
-      @hand_object = { cards: straight[:cards], type: :royal_flush }
+    sf = straight_flush
+    # binding.pry
+    if sf && (sf[:cards][0].value == :ace)
+      @hand_object = { cards: sf[:cards], type: :royal_flush }
       @hand_rank = 10
+      @best_five = sf[:cards]
       return @hand_object
     end
     false
   end
 
   def straight_flush
-    if straight && flush && (straight[:cards].join == flush[:cards].join)
-      @hand_object = { cards: straight[:cards], type: :straight_flush }
+    flushy = flush?
+    if flushy && (flushy[:cards][0].straight_values == flushy[:cards].map { |card| card.value })
+      @hand_object = { cards: flushy[:cards], type: :straight_flush }
+      @best_five = flushy[:cards]
+      # binding.pry
       return @hand_object
     end
     false
@@ -150,7 +181,7 @@ class Hand
     if groups[4]
       other_cards = cards.select { |card| card.value != groups[4][0][0].value }.sort_by { |kard| kard.rank }.reverse
       kicker = other_cards[0]
-      @best_five = groups[4] + [kicker]
+      @best_five = groups[4][0] + [kicker]
       @hand_object = { quad: groups[4], kicker: kicker, type: :four_of_a_kind}
       return @hand_object
     end
@@ -168,17 +199,36 @@ class Hand
     false
   end
 
-  def flush
+  def flush?
     flush = false
     suit_groups.values.each do |value|
       if value.length >= 5
         flush = { cards: value[0...5], type: :flush }
-        @best_five = flush[:cards]
-        @hand_object = flush
       end
     end
     flush
   end
+
+  def flush
+    flush = flush?
+    if flush
+      @best_five = flush[:cards]
+      @hand_object = flush
+    end
+    flush
+  end
+  #
+  # def flush
+  #   flush = false
+  #   suit_groups.values.each do |value|
+  #     if value.length >= 5
+  #       flush = { cards: value[0...5], type: :flush }
+  #       @best_five = flush[:cards]
+  #       @hand_object = flush
+  #     end
+  #   end
+  #   flush
+  # end
 
   def flush_draw?
     suit_groups.values.each do |value|
@@ -327,39 +377,53 @@ class Hand
     (pot_size * win_percent * 100).to_i / 100
   end
 
-  def winning_percentage
-    player_range = 6
-    hands = { does_better_than: [], does_the_same_as: [], does_worse_than: [], flush_draw: [], straight_draw: [] }
-    total = 0
-    d = Deck.new.cards.sort_by { |card| card.rank }
+  def unknown_cards
+    d = []
     card_strings = cards.map { |card| card.to_s }
+    Deck.new.cards.each do |card|
+      d.push(card) unless card_strings.include?(cards.to_s)
+    end
+    d.sort_by { |card| card.rank }
+  end
+
+  def other_hands_breakdown
+    hands = { does_better_than: [], does_the_same_as: [], does_worse_than: [], flush_draw: [], straight_draw: [], total: 0 }
+    total = 0
+    all_other_cards = unknown_cards
     evaluate_hand
-    d[0...-1].each_with_index do |card1, idx|
-      next if card_strings.include?(card1.to_s)
-      d[idx+1..-1].each do |card2|
-        next if card_strings.include?(card2.to_s)
+    all_other_cards[0...-1].each_with_index do |card1, idx|
+      all_other_cards[idx+1..-1].each do |card2|
         hand = Hand.new([card1,card2], @board)
-        if hand.starting_rank <= player_range
+        if hand.starting_rank <= opponent_range
           hands[:does_better_than].push(hand) if self > hand
           hands[:does_the_same_as].push(hand) if self == hand
           hands[:does_worse_than].push(hand) if self < hand
           hands[:flush_draw].push(hand) if hand.flush_draw?
           hands[:straight_draw].push(hand) if hand.straight_draw?
-          total += 1
+          hands[:total] += 1
         end
       end
     end
+    hands
+  end
+
+  def opponent_range(opponent = nil)
+    6
+  end
+
+  def winning_percentage
+    hands = other_hands_breakdown
     puts @board
     puts "#{"Your hand".colorize(:red)}: #{pocket.join(" ")}"
-    puts "#{(hands[:does_better_than].length / total.to_f * 100).to_i}% your hand does better than other hands"
-    puts "#{(hands[:does_the_same_as].length / total.to_f * 100).to_i}% your hand does the same as than other hands"
-    puts "#{(hands[:does_worse_than].length / total.to_f * 100).to_i}% your hand does does worse than other hands"
-    puts "#{(hands[:flush_draw].length / total.to_f * 100).to_i}% of other hands are on a flush draw"
-    puts "#{(hands[:straight_draw].length / total.to_f * 100).to_i}% of other hands are on a straight draw"
+    puts "#{(hands[:does_better_than].length / hands[:total].to_f * 100).to_i}% your hand does better than other hands"
+    puts "#{(hands[:does_the_same_as].length / hands[:total].to_f * 100).to_i}% your hand does the same as than other hands"
+    puts "#{(hands[:does_worse_than].length / hands[:total].to_f * 100).to_i}% your hand does does worse than other hands"
+    puts "#{(hands[:flush_draw].length / hands[:total].to_f * 100).to_i}% of other hands are on a flush draw"
+    puts "#{(hands[:straight_draw].length / hands[:total].to_f * 100).to_i}% of other hands are on a straight draw"
     # puts hands[:does_worse_than].map { |hand| hand.pocket.join(" ") }
-    puts "you lose against #{hands[:does_worse_than].length} hands out of #{total} against a player with a #{player_range} range"
+    puts "you lose against #{hands[:does_worse_than].length} hands out of #{hands[:total]} against a player with a #{opponent_range} range"
     pot_size = 114
-    percent_win = hands[:does_better_than].length / total.to_f
+    percent_win = hands[:does_better_than].length / hands[:total].to_f
     puts "if the pot is #{pot_size}, you should call a max of #{max_bet(pot_size, percent_win)}"
   end
 
@@ -384,45 +448,56 @@ class Hand
 
 end
 
-# ac = Card.new(:ace, :clubs)
-# ad = Card.new(:ace, :diamonds)
-# as = Card.new(:ace, :spades)
-# ah = Card.new(:ace, :hearts)
-# qd = Card.new(:queen, :diamonds)
-# qh = Card.new(:queen, :hearts)
-# kc = Card.new(:king, :clubs)
-# qc = Card.new(:queen, :clubs)
-# jc = Card.new(:jack, :clubs)
-# tc = Card.new(:ten, :clubs)
-# td = Card.new(:ten, :diamonds)
-# two = Card.new(:two, :hearts)
-# fourd = Card.new(:four, :diamonds)
-# fourc = Card.new(:four, :clubs)
-# fours = Card.new(:four, :spades)
-# fiveh = Card.new(:five, :hearts)
-# fourh = Card.new(:four, :hearts)
-# nh = Card.new(:nine, :hearts)
-# nc = Card.new(:nine, :clubs)
-# nd = Card.new(:nine, :diamonds)
-# thh = Card.new(:three, :hearts)
-# sixs = Card.new(:six, :spades)
+ac = Card.new(:ace, :clubs)
+ad = Card.new(:ace, :diamonds)
+as = Card.new(:ace, :spades)
+ah = Card.new(:ace, :hearts)
+qd = Card.new(:queen, :diamonds)
+qh = Card.new(:queen, :hearts)
+kc = Card.new(:king, :clubs)
+qc = Card.new(:queen, :clubs)
+jc = Card.new(:jack, :clubs)
+tc = Card.new(:ten, :clubs)
+td = Card.new(:ten, :diamonds)
+two = Card.new(:two, :hearts)
+fourd = Card.new(:four, :diamonds)
+fourc = Card.new(:four, :clubs)
+fours = Card.new(:four, :spades)
+fiveh = Card.new(:five, :hearts)
+fourh = Card.new(:four, :hearts)
+nh = Card.new(:nine, :hearts)
+nc = Card.new(:nine, :clubs)
+nd = Card.new(:nine, :diamonds)
+thh = Card.new(:three, :hearts)
+sixs = Card.new(:six, :spades)
+
+b = Board.new
+b.add_flop(ac,thh,fourd)
+# b.add_turn(as)
+# b.add_river(nd)
+
+cards2 = [tc, ah]
+h2 = Hand.new(cards2, b)
+# h2.other_hands_breakdown.each do |k,v|
+#   puts k
+#   unless v.is_a?(Integer)
+#     v.each do |hand|
+#       puts "#{hand.pocket.join(" ")}: #{hand.type}"
+#     end
+#   end
+#   puts
+# end
+h2.winning_percentage
 
 # cards1 = [ac, ad]
 # h = Hand.new(cards1, [])
 # puts h.starting_rank
-#
-# b = Board.new
-# b.add_flop(ac,thh,fourd)
-# b.add_turn(as)
-# b.add_turn(ad)
-# b.add_river(nd)
+
 
 # random_2 = Deck.new.cards[0..1]
-# cards2 = [ad, ah]
 
-# h2 = Hand.new(cards2, b)
+# p h2.winning_percentage
 # h2 = Hand.new(random_2, b)
-# h2.winning_percentage
 # p h2.straight_draw?
 # h2.possibilities
 

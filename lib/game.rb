@@ -1,12 +1,11 @@
-require './deck.rb'
-require './board.rb'
-require './hand.rb'
-require './player.rb'
-require './human_player.rb'
-require './computer_player.rb'
-require './pot.rb'
-require './dealer.rb'
-require 'pry'
+require_relative './deck.rb'
+require_relative './board.rb'
+require_relative './hand.rb'
+require_relative './player.rb'
+require_relative './human_player.rb'
+require_relative './computer_player.rb'
+require_relative './pot.rb'
+require_relative './dealer.rb'
 
 class Game
 
@@ -18,7 +17,7 @@ class Game
     @players = []
     @all_players = []
     @pot = Pot.new
-    @pot.amount_to_call = @big_blind
+    @pot.total_amount_to_call = @big_blind
     @board = Board.new
     @dealer = Dealer.new(@players, @board)
     @street = :preflop
@@ -146,7 +145,7 @@ class Game
     @dealer.new_deck
     @players = [*@all_players]
     reset_players_money_in_pot
-    @pot.amount_to_call = @big_blind
+    @pot.total_amount_to_call = @big_blind
   end
 
   def remove_losers

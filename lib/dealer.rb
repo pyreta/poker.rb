@@ -1,4 +1,4 @@
-require './hand.rb'
+require_relative './hand.rb'
 
 class Dealer
 
