@@ -2,7 +2,7 @@ require_relative './hand.rb'
 
 class Dealer
 
-  attr_reader :board
+  attr_reader :board, :players, :deck
 
   def initialize(players, board)
     @players = players

@@ -15,7 +15,7 @@ class ComputerPlayer < Player
 
   def folding?
     return false if amount_to_call == 0
-    if @board.all == []
+    if @hand.board.all == []
       starting_hand_rank > @range
     else
       # binding.pry

@@ -19,7 +19,7 @@ class Hand
     STARTING_RANKS
   end
 
-  attr_reader :hand, :rank, :hand_object
+  attr_reader :hand, :rank, :hand_object, :board
 
   def initialize(starting_two_cards, board)
     @hand = starting_two_cards.sort_by { |card| card.rank }.reverse()
@@ -471,23 +471,14 @@ nd = Card.new(:nine, :diamonds)
 thh = Card.new(:three, :hearts)
 sixs = Card.new(:six, :spades)
 
-b = Board.new
-b.add_flop(ac,thh,fourd)
-# b.add_turn(as)
-# b.add_river(nd)
-
-cards2 = [tc, ah]
-h2 = Hand.new(cards2, b)
-# h2.other_hands_breakdown.each do |k,v|
-#   puts k
-#   unless v.is_a?(Integer)
-#     v.each do |hand|
-#       puts "#{hand.pocket.join(" ")}: #{hand.type}"
-#     end
-#   end
-#   puts
-# end
-h2.winning_percentage
+# b = Board.new
+# b.add_flop(ac,thh,fourd)
+# # b.add_turn(as)
+# # b.add_river(nd)
+#
+# cards2 = [tc, ah]
+# h2 = Hand.new(cards2, b)
+# h2.winning_percentage
 
 # cards1 = [ac, ad]
 # h = Hand.new(cards1, [])

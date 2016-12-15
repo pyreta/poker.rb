@@ -2,21 +2,50 @@
 require 'colorize'
 
 class Player
-  attr_reader :hand, :name, :board, :money
-  attr_accessor :fold, :settled, :money_in_the_pot
+  @@players = 0
 
-  def initialize(money = 300, name)
-    @money = money
-    @name = name
+  def self.add_player
+    @@players += 1
+  end
+
+  def self.number_of_players
+    @@players
+  end
+
+  attr_reader :hand, :name, :board, :money, :pot
+  attr_accessor :settled, :money_in_the_pot
+
+  def initialize(arg1 = 0, arg2 = nil)
+    money = arg1.is_a?(Integer) ? arg1 : arg2
+    name = arg1.is_a?(String) ? arg1 : arg2
+    @money = money || 300
+    @name = name || default_name
     @board = []
-    @fold = false
+    @folded = false
     @settled = false
     @money_in_the_pot = 0
     @hand = { hand_rank: nil }
   end
 
+  def default_name
+    self.class.add_player
+    "player#{self.class.number_of_players}"
+  end
+
+  def folded?
+    @folded
+  end
+
+  def fold
+    @folded = true
+  end
+
+  def unfold
+    @folded = false
+  end
+
   def reset
-    @fold = false
+    @folded = false
   end
 
   def evaluate_hand
@@ -33,10 +62,10 @@ class Player
 
   def bet(bet_amount)
     if bet_amount == 'f'
-      @fold = true
+      @folded = true
       puts "*** #{@name} folds. ***".colorize(:yellow)
     end
-    unless @fold
+    unless @folded
       bet_amount = bet_amount.to_i > @money ? @money : bet_amount.to_i
 
       put_money_in_pot(bet_amount)
@@ -58,7 +87,7 @@ class Player
   end
 
   def needs_to_bet?
-    (@pot.total_amount_to_call > @money_in_the_pot) && !@fold
+    (@pot.total_amount_to_call > @money_in_the_pot) && !folded?
   end
 
   def win_money(amount)
