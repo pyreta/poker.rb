@@ -15,14 +15,12 @@ class Player
   attr_reader :hand, :name, :board, :money, :pot
   attr_accessor :settled, :money_in_the_pot
 
-  def initialize(arg1 = 0, arg2 = nil)
-    money = arg1.is_a?(Integer) ? arg1 : arg2
-    name = arg1.is_a?(String) ? arg1 : arg2
-    @money = money || 300
-    @name = name || default_name
+  def initialize(opts = {})
+    @money = opts[:money] || 0
+    @name = opts[:name] || default_name
     @board = []
     @folded = false
-    @settled = false
+    # @settled = false
     @money_in_the_pot = 0
     @hand = { hand_rank: nil }
   end
@@ -37,6 +35,7 @@ class Player
   end
 
   def fold
+    fold_message
     @folded = true
   end
 
@@ -44,9 +43,9 @@ class Player
     @folded = false
   end
 
-  def reset
-    @folded = false
-  end
+  # def reset
+  #   @folded = false
+  # end
 
   def evaluate_hand
     @hand.evaluate_hand
@@ -60,39 +59,55 @@ class Player
     @hand.rank
   end
 
+  def fold_message
+    puts "*** #{@name} folds. ***".colorize(:yellow)
+  end
+
+  def bet_message(bet_amount)
+    puts "#{@name} #{"bets".colorize(:red)} #{bet_amount.to_s.colorize(:green)}"
+  end
+
+  def owes_money_to_pot?
+    @pot.total_amount_to_call > @money_in_the_pot
+  end
+
   def bet(bet_amount)
-    if bet_amount == 'f'
-      @folded = true
-      puts "*** #{@name} folds. ***".colorize(:yellow)
-    end
-    unless @folded
-      bet_amount = bet_amount.to_i > @money ? @money : bet_amount.to_i
-
+    fold if bet_amount == 'f'
+    unless folded?
+      bet_amount = max_bet(bet_amount)
       put_money_in_pot(bet_amount)
-
-      if @pot.total_amount_to_call > @money_in_the_pot
-        # puts "YOU DIDNT BET ENOUGH #{@name}! #{@pot.total_amount_to_call - @money_in_the_pot} short!"
-      elsif @pot.total_amount_to_call <= @money_in_the_pot
-        @pot.total_amount_to_call = @money_in_the_pot
-        # puts "#{@pot.total_amount_to_call} is the new min bet!"
-      end
-      puts "#{@name} #{"bets".colorize(:red)} #{bet_amount.to_s.colorize(:green)}"
+      @pot.total_amount_to_call = @money_in_the_pot unless owes_money_to_pot?
     end
   end
 
+  def max_bet(bet_amount)
+    bet_amount.to_i > @money ? @money : bet_amount.to_i
+  end
+
   def put_money_in_pot(amount)
+    bet_message(amount)
     @money_in_the_pot += amount
     @money -= amount
     @pot.add(amount)
   end
 
-  def needs_to_bet?
-    (@pot.total_amount_to_call > @money_in_the_pot) && !folded?
+  def take_money_from_pot(amount)
+    @money_in_the_pot -= amount
+    @money += amount
+    @pot.take(amount)
   end
 
-  def win_money(amount)
-    @money += amount
+  def win_pot
+    take_money_from_pot(@pot.money)
   end
+
+  # def needs_to_bet?
+  #   (@pot.total_amount_to_call > @money_in_the_pot) && !folded?
+  # end
+
+  # def win_money(amount)
+  #   @money += amount
+  # end
 
   def set_hand(hand)
     @hand = hand
@@ -102,7 +117,7 @@ class Player
     @pot = pot
   end
 
-  def set_board(board)
-    @board = board
-  end
+  # def set_board(board)
+  #   @board = board
+  # end
 end

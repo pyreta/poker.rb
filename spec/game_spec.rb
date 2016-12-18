@@ -35,8 +35,8 @@ describe Game do
 
   describe 'adding players' do
     game = Game.new
-    toby = Player.new(100, "Toby")
-    luka = Player.new(100, "Luka")
+    toby = Player.new(money: 100, name: "Toby")
+    luka = Player.new(money: 100, name: "Luka")
     game.add_players([toby, luka])
     three_hundo = 300
 
@@ -78,7 +78,7 @@ describe Game do
       expect(game.small_blind).to eq(toby)
       expect(game.big_blind).to eq(luka)
 
-      bobby = Player.new(100, 'Bobby')
+      bobby = Player.new(money: 100, name: 'Bobby')
       game.add_player(bobby)
 
       expect(game.dealer_chip).to eq(toby)
@@ -91,7 +91,7 @@ describe Game do
       expect(game.small_blind).to eq(bobby)
       expect(game.big_blind).to eq(toby)
 
-      rick = Player.new(100, 'Rick')
+      rick = Player.new(money: 100, name: 'Rick')
 
       expect(game.dealer_chip).to eq(luka)
       expect(game.small_blind).to eq(bobby)

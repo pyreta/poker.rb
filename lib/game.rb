@@ -16,7 +16,6 @@ class Game
     @big_blind = big_blind
     @players = []
     @limit = limit
-    @all_players = []
     @pot = Pot.new
     @pot.total_amount_to_call = @big_blind
     @board = Board.new
@@ -37,10 +36,8 @@ class Game
   end
 
   def add_player(player)
-    player.set_board(@board)
     player.set_pot(@pot)
     @players.push(player)
-    @all_players.push(player)
   end
 
   def players_still_in_the_hand
@@ -55,17 +52,17 @@ class Game
 
   def betting_order
     if @street == :preflop
-      bbidx = @players.index(big_blind)
-      order = @players[bbidx+1..-1] + @players[0..bbidx]
+      bbidx = players_still_in_the_hand.index(big_blind)
+      order = players_still_in_the_hand[bbidx+1..-1] + players_still_in_the_hand[0..bbidx]
       return order
     end
-    didx = @all_players.index(dealer_chip)
-    order = @all_players[didx+1..-1] + @all_players[0..didx]
+    didx = @players.index(dealer_chip)
+    order = @players[didx+1..-1] + @players[0..didx]
     order.select { |player| !player.folded? }
   end
 
   def unsettle_hands
-    @all_players.each { |player|  player.settled = false }
+    @players.each { |player|  player.settled = false }
   end
 
   def anyone_needs_to_bet?
@@ -101,7 +98,7 @@ class Game
 
   def show_standings
     puts "Blinds: #{@small_blind}/#{@big_blind}".colorize(:blue)
-    @all_players.each do |player|
+    @players.each do |player|
       is_small = player == small_blind ? "small blind ".colorize(:red) : ""
       is_big = player == big_blind ? "big blind ".colorize(:red) : ""
       folded = player.folded? ? "Folded" : ""
@@ -153,19 +150,18 @@ class Game
   end
 
   def reset_players_money_in_pot
-    @all_players.each { |player| player.money_in_the_pot = 0 }
+    @players.each { |player| player.money_in_the_pot = 0 }
   end
 
   def new_hand
     @board.clear
     @dealer.new_deck
-    @players = [*@all_players]
     reset_players_money_in_pot
     @pot.total_amount_to_call = @big_blind
   end
 
   def remove_losers
-    @all_players = @all_players.select { |player| player.money > 0}
+    @players = @players.select { |player| player.money > 0}
   end
 
   def start
@@ -198,9 +194,9 @@ class Game
       remove_losers
       swap_players
       new_hand
-      if @all_players.length == 1
+      if @players.length == 1
         puts "GAME OVER".colorize(:red)
-        puts "#{@all_players[0].name.colorize(:yellow)} wins!"
+        puts "#{@players[0].name.colorize(:yellow)} wins!"
         2.times { puts "" }
         break
       end
@@ -209,21 +205,22 @@ class Game
   end
 
   def swap_players
-    @all_players.push(@all_players.shift)
+    @players.push(@players.shift)
   end
 
   def dealer_chip
-    @all_players[0]
+    # @players[0]
+    @players[0]
   end
 
   def small_blind
-    return dealer_chip if @all_players.length == 2
-    @all_players[1]
+    return dealer_chip if @players.length == 2
+    @players[1]
   end
 
   def big_blind
-    return @all_players[1] if @all_players.length == 2
-    @all_players[2]
+    return @players[1] if @players.length == 2
+    @players[2]
   end
 
   def blinds
@@ -297,11 +294,11 @@ class Game
 
 end
 
-
-g = Game.new
-p1 = HumanPlayer.new('Louis')
-p2 = ComputerPlayer.new('Amber')
-p3 = ComputerPlayer.new('Krishan')
-p4 = ComputerPlayer.new('Erica')
-g.add_players([p1,p2,p3,p4])
-g.start
+#
+# g = Game.new
+# p1 = HumanPlayer.new('Louis')
+# p2 = ComputerPlayer.new('Amber')
+# p3 = ComputerPlayer.new('Krishan')
+# p4 = ComputerPlayer.new('Erica')
+# g.add_players([p1,p2,p3,p4])
+# g.start

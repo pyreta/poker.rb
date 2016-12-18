@@ -3,8 +3,8 @@ require "dealer"
 require "board"
 require "player"
 
-toby = Player.new(100, "Toby")
-luka = Player.new(100, "Luka")
+toby = Player.new(money: 100, name: "Toby")
+luka = Player.new(money: 100, name: "Luka")
 board = Board.new
 dealer = Dealer.new([toby, luka], board)
 
